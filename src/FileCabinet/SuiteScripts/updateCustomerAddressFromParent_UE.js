@@ -1,6 +1,6 @@
 /**
  * @NApiVersion 2.1
- * @NScriptType WorkflowActionScript
+ * @NScriptType UserEventScript
  */
 define(['N/log', 'N/record'],
     /**
@@ -9,16 +9,27 @@ define(['N/log', 'N/record'],
  */
     (log, record) => {
         /**
-         * Defines the WorkflowAction script trigger point.
+         * Defines the function definition that is executed before record is loaded.
+         * @param {Object} scriptContext
+         * @param {Record} scriptContext.newRecord - New record
+         * @param {string} scriptContext.type - Trigger type; use values from the context.UserEventType enum
+         * @param {Form} scriptContext.form - Current form
+         * @param {ServletRequest} scriptContext.request - HTTP request information sent from the browser for a client action only.
+         * @since 2015.2
+         */
+        const beforeLoad = (scriptContext) => {
+
+        }
+
+        /**
+         * Defines the function definition that is executed before record is submitted.
          * @param {Object} scriptContext
          * @param {Record} scriptContext.newRecord - New record
          * @param {Record} scriptContext.oldRecord - Old record
-         * @param {string} scriptContext.workflowId - Internal ID of workflow which triggered this action
-         * @param {string} scriptContext.type - Event type
-         * @param {Form} scriptContext.form - Current form that the script uses to interact with the record
-         * @since 2016.1
+         * @param {string} scriptContext.type - Trigger type; use values from the context.UserEventType enum
+         * @since 2015.2
          */
-        const onAction = (scriptContext) => {
+        const beforeSubmit = (scriptContext) => {
             try {
 
 
@@ -73,20 +84,20 @@ define(['N/log', 'N/record'],
                     fieldId: "addressbookaddress"
                 })
 
-                var billFields = defaultBillAddress.fields;
+                var billFields = ['country', 'attention', 'addressee', 'addrphone', 'addr1', 'addr2', 'city', 'addr3', 'state', 'zip'];
 
-                log.debug('billFields',billFields);
+                for (var fieldValue of billFields) {
 
-                for (var fieldValue in billFields) {
-
-                    log.debug(fieldValue,billFields[fieldValue]);
+                    var tempValue = defaultBillAddress.getValue({
+                        fieldId: fieldValue
+                    });
 
                     parentAdrLineRecord.setValue({
                         fieldId: fieldValue,
-                        value: billFields[fieldValue]
-                    })
+                        value: tempValue
+                    });
 
-                    log.debug(fieldValue,parentAdrLineRecord)
+                    log.debug(fieldValue,tempValue)
 
                 }
 
@@ -101,6 +112,8 @@ define(['N/log', 'N/record'],
                     ignoreRecalc: true
                 })
 
+                // currRecord.save()
+
             } catch (err) {
                 log.error({
                     title: 'error creating address from parent',
@@ -109,5 +122,18 @@ define(['N/log', 'N/record'],
             }
         }
 
-        return { onAction };
+        /**
+         * Defines the function definition that is executed after record is submitted.
+         * @param {Object} scriptContext
+         * @param {Record} scriptContext.newRecord - New record
+         * @param {Record} scriptContext.oldRecord - Old record
+         * @param {string} scriptContext.type - Trigger type; use values from the context.UserEventType enum
+         * @since 2015.2
+         */
+        const afterSubmit = (scriptContext) => {
+
+        }
+
+        return {beforeLoad, beforeSubmit, afterSubmit}
+
     });
