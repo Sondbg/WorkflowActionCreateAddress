@@ -252,7 +252,7 @@ define(['N/log', 'N/record'],
                     fieldId: 'parent'
                 });
 
-                if (parent != 4018) return
+                if (parent != 4018) return true
 
                 var sublistAdr = "addressbook";
 
