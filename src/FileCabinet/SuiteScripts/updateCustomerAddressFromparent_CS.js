@@ -244,11 +244,102 @@ define(['N/log', 'N/record'],
          * @since 2015.2
          */
         function saveRecord(scriptContext) {
+            try {
 
+                var currRecord = scriptContext.currentRecord;
+
+                var parent = currRecord.getValue({
+                    fieldId: 'parent'
+                });
+
+                if (parent != 4018) return
+
+                var sublistAdr = "addressbook";
+
+                var parentRecord = record.load({
+                    type: record.Type.CUSTOMER,
+                    id: parent,
+                    isDynamic: false
+                });
+
+                var addressSublistLength = parentRecord.getLineCount({
+                    sublistId: sublistAdr
+                });
+
+                var defaultBillAddress;
+
+                for (var line = 0; line < addressSublistLength; line++) {
+                    if (parentRecord.getSublistValue({
+                        sublistId: sublistAdr,
+                        fieldId: "defaultbilling",
+                        line: line
+                    })) {
+                        defaultBillAddress = parentRecord.getSublistSubrecord({
+                            sublistId: sublistAdr,
+                            fieldId: "addressbookaddress",
+                            line: line
+                        });
+                        break;
+                    }
+
+                }
+                log.debug({
+                    title: 'retrieved Address',
+                    details: defaultBillAddress
+                })
+
+                currRecord.selectNewLine({
+                    sublistId: sublistAdr
+                });
+
+                var parentAdrLineRecord = currRecord.getCurrentSublistSubrecord({
+                    sublistId: sublistAdr,
+                    fieldId: "addressbookaddress"
+                })
+
+                var billFields = ['country', 'attention', 'addressee', 'addrphone', 'addr1', 'addr2', 'city', 'addr3', 'state', 'zip'];
+
+
+                for (var index = 0; index < billFields.length; index++) {
+
+                    var tempValue = defaultBillAddress.getValue({
+                        fieldId: billFields[index]
+                    });
+
+                    parentAdrLineRecord.setValue({
+                        fieldId: billFields[index],
+                        value: tempValue
+                    });
+
+                    log.debug(billFields[index], tempValue)
+
+                }
+
+                currRecord.setCurrentSublistValue({
+                    sublistId: sublistAdr,
+                    fieldId: "defaultbilling",
+                    value: true
+                })
+
+                currRecord.commitLine({
+                    sublistId: sublistAdr,
+                    ignoreRecalc: true
+                })
+
+               return true
+
+            } catch (err) {
+                log.error({
+                    title: 'error creating address from parent',
+                    details: err
+                })
+            }
+
+            return true
         }
 
         return {
-            postSourcing: postSourcing,
+            saveRecord: saveRecord
         };
 
     });
